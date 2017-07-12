@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Xml;
 
 namespace Crypt
 {
@@ -75,53 +77,36 @@ namespace Crypt
 		enum Mode
 		{
 			Encrypt,
-			Decrypt
+			Decrypt,
+			EnableSigning
+		}
+		
+		private static void PrintUsage()
+		{
+			Console.WriteLine("Usage: crypt.exe encrypt|decrypt <source> <dest>");
+			Console.WriteLine("Usage: crypt.exe enablesigning <csproj>");
 		}
 
-		private static bool ParseArgs(string[] args, out string source, out string dest, out Mode mode)
+		private static int EncryptDecrypt(Mode mode, string[] args)
 		{
-			source = null;
-			dest = null;
-			mode = (Mode)(-1);
-
 			if (args.Length < 3)
 			{
-				return false;
+				return -1;
 			}
 
 			if (!Enum.TryParse(args[0], true, out mode))
 			{
 				Console.WriteLine("ERROR: Unknown mode: {1}");
-				return false;
+				return -1;
 			}
 
-			source = args[1];
+			var source = args[1];
 			if (!File.Exists(source))
 			{
 				Console.WriteLine("ERROR: source does not exist");
-				return false;
-			}
-
-			dest = args[2];
-			return true;
-		}
-
-		private static void PrintUsage()
-		{
-			Console.WriteLine("Usage: crypt.exe encrypt|decrypt source dest");
-			Console.WriteLine("\tsource must point to an existing file");
-			Console.WriteLine("\tIf dest points towards an existing file, it will be overwritten");
-		}
-
-		public static int Main(string[] args)
-		{
-			string source, dest;
-			Mode mode;
-			if (!ParseArgs(args, out source, out dest, out mode))
-			{
-				PrintUsage();
 				return -1;
 			}
+			var dest = args[2];
 
 			const string passwordName = "CRYPT_PASSWORD";
 			var password = Environment.GetEnvironmentVariable(passwordName);
@@ -151,7 +136,7 @@ namespace Crypt
 			}
 
 			var salt = new byte[saltLength];
-			for(int i = 0; i < saltLength; ++i)
+			for (int i = 0; i < saltLength; ++i)
 			{
 				byte @byte;
 				if (!byte.TryParse(bytesValue[i], NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out @byte))
@@ -205,6 +190,75 @@ namespace Crypt
 				case Mode.Decrypt:
 					Decrypt(source, dest, key, iv);
 					return 0;
+
+				default:
+					Console.WriteLine("ERROR: Unknown mode {0}", mode);
+					PrintUsage();
+					return -1;
+			}
+		}
+
+		private static int EnableSigning(string[] args)
+		{
+			if (args.Length <= 2)
+			{
+				return -1;
+			}
+
+			var csproj = args[1];
+			if (!File.Exists(csproj))
+			{
+				Console.WriteLine("ERROR: project does not exist");
+				return -1;
+			}
+
+			var key = args[2];
+
+			var doc = new XmlDocument();
+			doc.Load(csproj);
+			var root = doc.FirstChild;
+			var project = root.NextSibling;
+			var lastPropertyGroup = project.ChildNodes.OfType<XmlElement>()
+				.Last(x => x.Name == "PropertyGroup");
+
+			var ns = "http://schemas.microsoft.com/developer/msbuild/2003";
+			var propertyGroup = doc.CreateElement("PropertyGroup", ns);
+			var signAssembly = doc.CreateElement("SignAssembly", ns);
+			signAssembly.InnerText = "true";
+			propertyGroup.AppendChild(signAssembly);
+			var keyFile = doc.CreateElement("AssemblyOriginatorKeyFile", ns);
+			keyFile.InnerText = key;
+			propertyGroup.AppendChild(keyFile);
+			project.InsertAfter(propertyGroup, lastPropertyGroup);
+
+			doc.Save(csproj);
+
+			return 0;
+		}
+
+		public static int Main(string[] args)
+		{
+			if (args.Length < 1)
+			{
+				PrintUsage();
+				return -1;
+			}
+
+			Mode mode;
+			if (!Enum.TryParse(args[0], true, out mode))
+			{
+				Console.WriteLine("ERROR: Unknown mode: {1}");
+				return -1;
+			}
+
+			switch (mode)
+			{
+				case Mode.Encrypt:
+				case Mode.Decrypt:
+					return EncryptDecrypt(mode, args);
+
+				case Mode.EnableSigning:
+					return EnableSigning(args);
 
 				default:
 					Console.WriteLine("ERROR: Unknown mode {0}", mode);
