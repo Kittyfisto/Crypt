@@ -217,19 +217,46 @@ namespace Crypt
 			var doc = new XmlDocument();
 			doc.Load(csproj);
 			var root = doc.FirstChild;
-			var project = root.NextSibling;
+			XmlNode project;
+			bool isNewFormat;
+			if (root.Name == "Project")
+			{
+				project = root;
+				isNewFormat = true;
+			}
+			else
+			{
+				project = root.NextSibling;
+				isNewFormat = false;
+			}
+
 			var lastPropertyGroup = project.ChildNodes.OfType<XmlElement>()
 				.Last(x => x.Name == "PropertyGroup");
 
-			var ns = "http://schemas.microsoft.com/developer/msbuild/2003";
-			var propertyGroup = doc.CreateElement("PropertyGroup", ns);
-			var signAssembly = doc.CreateElement("SignAssembly", ns);
-			signAssembly.InnerText = "true";
-			propertyGroup.AppendChild(signAssembly);
-			var keyFile = doc.CreateElement("AssemblyOriginatorKeyFile", ns);
-			keyFile.InnerText = key;
-			propertyGroup.AppendChild(keyFile);
-			project.InsertAfter(propertyGroup, lastPropertyGroup);
+			if (isNewFormat)
+			{
+				// .net core / .net standard don't specify an xml namespace at all...
+				var propertyGroup = doc.CreateElement("PropertyGroup");
+				var signAssembly = doc.CreateElement("SignAssembly");
+				signAssembly.InnerText = "true";
+				propertyGroup.AppendChild(signAssembly);
+				var keyFile = doc.CreateElement("AssemblyOriginatorKeyFile");
+				keyFile.InnerText = key;
+				propertyGroup.AppendChild(keyFile);
+				project.InsertAfter(propertyGroup, lastPropertyGroup);
+			}
+			else
+			{
+				var ns = "http://schemas.microsoft.com/developer/msbuild/2003";
+				var propertyGroup = doc.CreateElement("PropertyGroup", ns);
+				var signAssembly = doc.CreateElement("SignAssembly", ns);
+				signAssembly.InnerText = "true";
+				propertyGroup.AppendChild(signAssembly);
+				var keyFile = doc.CreateElement("AssemblyOriginatorKeyFile", ns);
+				keyFile.InnerText = key;
+				propertyGroup.AppendChild(keyFile);
+				project.InsertAfter(propertyGroup, lastPropertyGroup);
+			}
 
 			doc.Save(csproj);
 
