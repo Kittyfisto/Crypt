@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypt", "Crypt.csproj", "{6FC3D0DF-9156-4A44-BB12-C45E2F05FE64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypt", "Crypt\Crypt.csproj", "{6FC3D0DF-9156-4A44-BB12-C45E2F05FE64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypt.Test", "..\Crypt.Test\Crypt.Test.csproj", "{3A27FBCA-4063-4E0D-AD16-FC5A261BF75E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypt.Test", "Crypt.Test\Crypt.Test.csproj", "{3A27FBCA-4063-4E0D-AD16-FC5A261BF75E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

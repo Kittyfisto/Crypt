@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Crypt": {
+      "commandName": "Project",
+      "commandLineArgs": "enablesigning C:\\Users\\lwsha\\Documents\\GitHub\\System.Extensions\\src\\System.Extensions\\System.Extensions.csproj C:\\Users\\lwsha\\Documents\\GitHub\\Crypt\\foo.snk"
+    }
+  }
+}

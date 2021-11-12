@@ -216,7 +216,7 @@ namespace Crypt
 
 			var doc = new XmlDocument();
 			doc.Load(csproj);
-			var root = doc.FirstChild;
+			var root = doc.DocumentElement;
 			XmlNode project;
 			bool isNewFormat;
 			if (root.Name == "Project")
